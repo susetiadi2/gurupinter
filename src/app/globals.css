@@ -1,0 +1,71 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Print Settings for A4 Portrait, Times New Roman, 12pt */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 2cm 2cm 2cm 3cm; /* top right bottom left */
+  }
+  
+  body, .prose {
+    font-family: "Times New Roman", Times, serif !important;
+    font-size: 12pt !important;
+    color: #000 !important;
+    line-height: 1.5 !important;
+  }
+  
+  .prose h1, .prose h2, .prose h3, .prose h4 {
+    font-family: "Times New Roman", Times, serif !important;
+    color: #000 !important;
+  }
+  
+  html, body, main, aside, div {
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    overflow-y: visible !important;
+  }
+}
+
+/* Styles for Multiple Choice Options (Proportional Columns) */
+.prose ol > li > ol, .prose ol > li > ul,
+.prose ul > li > ul, .prose ul > li > ol {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.5rem 1rem;
+  margin-top: 0.5rem;
+  list-style-type: none !important;
+}
+
+.prose ol > li > ol > li, .prose ol > li > ul > li,
+.prose ul > li > ul > li, .prose ul > li > ol > li {
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-left: 0;
+}
