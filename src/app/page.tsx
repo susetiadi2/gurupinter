@@ -18,14 +18,15 @@ const subjectOptions: Record<string, string[]> = {
 };
 
 const getGradeOptions = (level: string, phase: string): string[] => {
+  if (!phase) return [];
   if (level === 'PAUD') return ['PAUD'];
   if (level === 'TK') return ['TK A', 'TK B'];
-  if (phase.startsWith('A')) return ['1', '2'];
-  if (phase.startsWith('B')) return ['3', '4'];
-  if (phase.startsWith('C')) return ['5', '6'];
-  if (phase.startsWith('D')) return ['7', '8', '9'];
-  if (phase.startsWith('E')) return ['10'];
-  if (phase.startsWith('F')) return ['11', '12'];
+  if (phase.includes('A') || phase.includes('1-2')) return ['1', '2'];
+  if (phase.includes('B') || phase.includes('3-4')) return ['3', '4'];
+  if (phase.includes('C') || phase.includes('5-6')) return ['5', '6'];
+  if (phase.includes('D') || phase.includes('7-9')) return ['7', '8', '9'];
+  if (phase.includes('E') || phase.includes('10')) return ['10'];
+  if (phase.includes('F') || phase.includes('11-12')) return ['11', '12'];
   return [];
 };
 
@@ -70,6 +71,7 @@ export default function Home() {
   const [email, setEmail] = useState('');
   const [isSendingLink, setIsSendingLink] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [isFormVisible, setIsFormVisible] = useState(true);
   const [sigSettings, setSigSettings] = useState({
     principalName: '',
     principalNip: '',
@@ -77,8 +79,15 @@ export default function Home() {
     placeName: ''
   });
 
+  const [toast, setToast] = useState<{message: string, visible: boolean, type: 'success' | 'error' | 'info'}>({ message: '', visible: false, type: 'success' });
+
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setToast({ message, visible: true, type });
+    setTimeout(() => setToast(prev => ({ ...prev, visible: false })), 3000);
+  };
+
   const handleLogin = async () => {
-    if (!email) return alert('Silakan masukkan email Anda terlebih dahulu.');
+    if (!email) return showToast('Silakan masukkan email Anda terlebih dahulu.', 'error');
     setIsSendingLink(true);
     const { error } = await supabase.auth.signInWithOtp({
       email,
@@ -86,9 +95,9 @@ export default function Home() {
     });
     setIsSendingLink(false);
     if (error) {
-      alert(error.message);
+      showToast(error.message, 'error');
     } else {
-      alert('Tautan ajaib (Magic Link) telah dikirim ke email Anda! Silakan periksa kotak masuk atau folder spam Anda, lalu klik tautan tersebut untuk masuk.');
+      showToast('Tautan ajaib (Magic Link) telah dikirim ke email Anda!', 'success');
       setEmail('');
     }
   };
@@ -154,7 +163,7 @@ export default function Home() {
     }
     localStorage.setItem('sigSettings', JSON.stringify(sigSettings));
     setShowSettings(false);
-    alert('Pengaturan tanda tangan berhasil disimpan!');
+    showToast('Pengaturan tanda tangan berhasil disimpan!', 'success');
   };
 
   const exportToDocx = async () => {
@@ -190,7 +199,7 @@ export default function Home() {
       document.body.removeChild(a);
     } catch (error) {
       console.error(error);
-      alert('Gagal mengunduh file Word.');
+      showToast('Gagal mengunduh file Word.', 'error');
     }
   };
 
@@ -284,7 +293,7 @@ export default function Home() {
         document.getElementById('preview-section')?.scrollIntoView({ behavior: 'smooth' });
       }
     } catch (error: any) {
-      alert(error.message);
+      showToast(error.message, 'error');
     } finally {
       setLoading(false);
     }
@@ -292,7 +301,7 @@ export default function Home() {
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(result);
-    alert('Modul berhasil disalin!');
+    showToast('Modul berhasil disalin!', 'success');
   };
 
   return (
@@ -339,10 +348,24 @@ export default function Home() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 print:block print:w-full">
+      {/* Form Visibility Toggle */}
+      <div className="max-w-7xl mx-auto mb-6 flex print:hidden">
+        <button 
+          onClick={() => setIsFormVisible(!isFormVisible)}
+          className="flex items-center gap-2 px-5 py-2.5 bg-slate-800 text-white font-semibold rounded-xl hover:bg-slate-700 transition-all shadow-md active:scale-95"
+        >
+          {isFormVisible ? (
+            <><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" /></svg> Sembunyikan Formulir</>
+          ) : (
+            <><svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 6h16M4 12h16M4 18h16" /></svg> Tampilkan Formulir (Informasi Umum, dll)</>
+          )}
+        </button>
+      </div>
+
+      <div className={`max-w-7xl mx-auto grid grid-cols-1 gap-8 print:block print:w-full transition-all duration-300 ${isFormVisible ? 'lg:grid-cols-2' : 'lg:grid-cols-1'}`}>
         
         {/* Left Column: Form */}
-        <main className="space-y-6 print:hidden">
+        <main className={`space-y-6 print:hidden ${isFormVisible ? 'block' : 'hidden'}`}>
           <form id="rppForm" onSubmit={handleSubmit} className="space-y-6">
             
             {/* 1. Informasi Umum */}
@@ -625,6 +648,31 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* Modern Toast Notification */}
+      <div className={`fixed bottom-6 right-6 z-[100] transition-all duration-300 transform ${toast.visible ? 'translate-y-0 opacity-100 scale-100' : 'translate-y-10 opacity-0 scale-95 pointer-events-none'}`}>
+        <div className={`px-5 py-4 rounded-2xl shadow-2xl flex items-center gap-3 font-medium border backdrop-blur-xl ${
+          toast.type === 'error' 
+            ? 'bg-red-500/90 border-red-400 text-white shadow-red-500/20' 
+            : 'bg-slate-900/95 border-slate-700 text-white shadow-slate-900/30'
+        }`}>
+          {toast.type === 'success' && (
+            <div className="bg-emerald-500/20 p-1.5 rounded-full">
+              <svg className="w-5 h-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+          )}
+          {toast.type === 'error' && (
+            <div className="bg-white/20 p-1.5 rounded-full">
+              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+          )}
+          <span className="text-sm tracking-wide">{toast.message}</span>
+        </div>
+      </div>
     </div>
   );
 }
