@@ -13,6 +13,13 @@ export async function POST(req: NextRequest) {
     let userId = null;
     let token = '';
 
+    if (!supabaseUrl || !supabaseAnonKey) {
+      return NextResponse.json(
+        { error: 'Pengaturan Database belum lengkap. Pastikan NEXT_PUBLIC_SUPABASE_URL dan KEY sudah ditambahkan di Vercel.' },
+        { status: 500 }
+      );
+    }
+
     // Initialize Supabase client
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
