@@ -289,7 +289,7 @@ export async function POST(req: Request) {
     const safeSubject = String(subject || 'RPP').replace(/[^a-zA-Z0-9]/g, '_');
     const filename = `Modul_Ajar_${safeSubject}.docx`;
 
-    return new NextResponse(buffer, {
+    return new NextResponse(buffer as any, {
       status: 200,
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
