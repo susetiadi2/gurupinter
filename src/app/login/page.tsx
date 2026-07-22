@@ -181,7 +181,7 @@ export default function LoginPage() {
       // So they have their auth.uid() now.
       const { error: claimError } = await supabase
         .from('licenses')
-        .update({ user_id: authData.user.id })
+        .update({ user_id: authData.user.id } as any)
         .eq('id', validLicenseId);
 
       if (claimError) {
@@ -223,12 +223,12 @@ export default function LoginPage() {
       </div>
 
       {/* Container */}
-      <div className="bg-white max-w-md w-full rounded-[2rem] shadow-xl shadow-slate-200/50 p-6 md:p-8 border border-slate-100">
+      <div className="bg-white max-w-md w-full rounded-4xl shadow-xl shadow-slate-200/50 p-6 md:p-8 border border-slate-100">
         
         <div className="mb-8 flex items-center justify-center gap-4">
           <img src="https://iili.io/CNIcxkl.png" alt="Logo Apmo-AI" className="h-14 md:h-16 object-contain" />
           <div className="text-left flex flex-col justify-center">
-            <h1 className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 mb-1 tracking-tight leading-none">APMO-AI</h1>
+            <h1 className="text-3xl md:text-4xl font-black text-transparent bg-clip-text bg-linear-to-r from-blue-600 to-indigo-600 mb-1 tracking-tight leading-none">APMO-AI</h1>
             <p className="text-xs md:text-sm font-medium text-slate-500">Aplikasi Pembuat Modul Berbasis AI</p>
           </div>
         </div>
@@ -341,7 +341,7 @@ export default function LoginPage() {
 
             {/* License Box */}
             <div className="bg-[#fffdf0] border border-yellow-200 rounded-2xl p-5 mt-2">
-              <label className="block text-xs font-black text-amber-800 tracking-wider mb-2 flex items-center">
+              <label className="flex text-xs font-black text-amber-800 tracking-wider mb-2 items-center">
                 <span className="mr-2">🔑</span> KODE LISENSI <span className="text-red-500 ml-1">*</span>
               </label>
               <div className="relative">
