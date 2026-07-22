@@ -63,17 +63,18 @@ export default function LoginPage() {
         if (error || !data) {
           throw new Error('Kode lisensi tidak ditemukan');
         }
-        if (!data.is_active || new Date(data.expires_at) < new Date()) {
+        const licenseData = data as any;
+        if (!licenseData.is_active || new Date(licenseData.expires_at) < new Date()) {
           throw new Error('Kode lisensi sudah tidak aktif atau kedaluwarsa');
         }
-        if (data.user_id) {
+        if (licenseData.user_id) {
           throw new Error('Kode lisensi sudah digunakan oleh pengguna lain');
         }
 
         // Valid!
-        setValidLicenseId(data.id);
+        setValidLicenseId(licenseData.id);
         // @ts-ignore
-        setSchoolName(data.schools?.name || 'Sekolah Terdaftar');
+        setSchoolName(licenseData.schools?.name || 'Sekolah Terdaftar');
       } catch (err: any) {
         setSchoolName('');
         setValidLicenseId(null);
