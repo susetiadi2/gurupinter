@@ -144,7 +144,7 @@ export async function POST(req: Request) {
               children: parseInlineText(h.text, true),
               alignment: AlignmentType.CENTER // Headers usually look best centered
             })],
-            margins: { top: 100, bottom: 100, left: 100, right: 100 },
+            margins: { marginUnitType: WidthType.DXA, top: 100, bottom: 100, left: 100, right: 100 },
             shading: { fill: "F3F4F6" } // Light gray background for professional look
           })
         );
@@ -162,7 +162,7 @@ export async function POST(req: Request) {
                 children: parseInlineText(c.text),
                 alignment: alignment
               })],
-              margins: { top: 100, bottom: 100, left: 100, right: 100 }
+              margins: { marginUnitType: WidthType.DXA, top: 100, bottom: 100, left: 100, right: 100 }
             });
           });
           rows.push(new TableRow({ children: rowCells }));
@@ -198,9 +198,7 @@ export async function POST(req: Request) {
                   top: { style: BorderStyle.NONE, size: 0 },
                   bottom: { style: BorderStyle.NONE, size: 0 },
                   left: { style: BorderStyle.NONE, size: 0 },
-                  right: { style: BorderStyle.NONE, size: 0 },
-                  insideHorizontal: { style: BorderStyle.NONE, size: 0 },
-                  insideVertical: { style: BorderStyle.NONE, size: 0 }
+                  right: { style: BorderStyle.NONE, size: 0 }
                 },
                 children: [
                   new Paragraph({
