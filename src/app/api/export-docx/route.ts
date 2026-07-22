@@ -88,7 +88,7 @@ export async function POST(req: Request) {
     };
 
     for (const token of tokens) {
-      let tokenText = token.text || '';
+      let tokenText = (token as any).text || '';
       
       // Auto format section headers (e.g. A. Identitas Modul) to be UPPERCASE and BOLD
       if (token.type === 'heading' || token.type === 'paragraph') {
@@ -144,7 +144,7 @@ export async function POST(req: Request) {
               children: parseInlineText(h.text, true),
               alignment: AlignmentType.CENTER // Headers usually look best centered
             })],
-            padding: { top: 100, bottom: 100, left: 100, right: 100 },
+            margins: { top: 100, bottom: 100, left: 100, right: 100 },
             shading: { fill: "F3F4F6" } // Light gray background for professional look
           })
         );
@@ -162,7 +162,7 @@ export async function POST(req: Request) {
                 children: parseInlineText(c.text),
                 alignment: alignment
               })],
-              padding: { top: 100, bottom: 100, left: 100, right: 100 }
+              margins: { top: 100, bottom: 100, left: 100, right: 100 }
             });
           });
           rows.push(new TableRow({ children: rowCells }));
