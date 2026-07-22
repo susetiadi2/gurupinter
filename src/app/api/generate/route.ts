@@ -13,9 +13,16 @@ export async function POST(req: NextRequest) {
     let userId = null;
     let token = '';
 
+    const missing = [];
+    if (!process.env.NEXT_PUBLIC_SUPABASE_URL && !process.env.SUPABASE_URL) missing.push('SUPABASE URL');
+    if (!process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY && !process.env.SUPABASE_ANON_KEY) missing.push('SUPABASE ANON KEY');
+
     if (!supabaseUrl || !supabaseAnonKey) {
       return NextResponse.json(
-        { error: 'Pengaturan Database belum lengkap. Pastikan NEXT_PUBLIC_SUPABASE_URL dan KEY sudah ditambahkan di Vercel.' },
+        {
+          error: `Pengaturan Database belum lengkap. Pastikan variabel berikut sudah ditambahkan di Vercel: ${missing.join(', ')}.`,
+          missing,
+        },
         { status: 500 }
       );
     }
