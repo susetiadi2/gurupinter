@@ -128,7 +128,8 @@ export default function LoginPage() {
           .eq('id', data.user.id)
           .single();
           
-        if (profile?.role === 'superadmin') {
+        const userProfile = profile as any;
+        if (userProfile?.role === 'superadmin') {
           window.location.href = '/superadmin';
           return;
         }
