@@ -225,9 +225,7 @@ export async function POST(req: Request) {
                   top: { style: BorderStyle.NONE, size: 0 },
                   bottom: { style: BorderStyle.NONE, size: 0 },
                   left: { style: BorderStyle.NONE, size: 0 },
-                  right: { style: BorderStyle.NONE, size: 0 },
-                  insideHorizontal: { style: BorderStyle.NONE, size: 0 },
-                  insideVertical: { style: BorderStyle.NONE, size: 0 }
+                  right: { style: BorderStyle.NONE, size: 0 }
                 },
                 children: [
                   new Paragraph({
