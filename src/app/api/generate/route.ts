@@ -1,12 +1,69 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { createClient } from '@supabase/supabase-js';
 
-// Initialize the Gemini API client
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
 export async function POST(req: NextRequest) {
   try {
     const data = await req.json();
+    const customApiKey = data.customApiKey?.trim();
+    let useSystemKey = false;
+    let userId = null;
+    let token = '';
+
+    // Initialize Supabase client
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+    // 1. Authentication & Authorization Check
+    const authHeader = req.headers.get('Authorization');
+    
+    if (authHeader) {
+      token = authHeader.replace('Bearer ', '');
+      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+      if (authError || !user) {
+        return NextResponse.json(
+          { error: 'Sesi tidak valid atau telah kedaluwarsa. Silakan login kembali.' },
+          { status: 401 }
+        );
+      }
+      
+      userId = user.id;
+
+      // 2. Check Credits if using Free Tier (No Custom API Key)
+      if (!customApiKey) {
+        useSystemKey = true;
+
+        // Check if user has enough credits by creating an authenticated client
+        const authSupabase = createClient(supabaseUrl, supabaseAnonKey, {
+          global: { headers: { Authorization: `Bearer ${token}` } }
+        });
+
+        const { data: credits, error: creditError } = await authSupabase.rpc('get_my_credit');
+        
+        if (credits === 0) {
+          return NextResponse.json(
+            { error: 'Kuota gratis Anda telah habis. Silakan masukkan Google Gemini API Key Anda sendiri di menu Pengaturan Aplikasi untuk akses tanpa batas.' },
+            { status: 402 } // Payment Required
+          );
+        }
+      }
+    } else {
+      // Guest User
+      if (!customApiKey) {
+        useSystemKey = true;
+      }
+    }
+
+    // 2. Initialize Gemini AI
+    const apiKeyToUse = customApiKey || process.env.GEMINI_API_KEY || '';
+    if (!apiKeyToUse) {
+      return NextResponse.json({ error: 'Sistem belum dikonfigurasi dengan API Key.' }, { status: 500 });
+    }
+    
+    const genAI = new GoogleGenerativeAI(apiKeyToUse);
 
     let specialInstructions = [];
 
@@ -45,6 +102,7 @@ Buatkan sebuah dokumen Modul Ajar/RPP yang mendalam dan komprehensif berdasarkan
 - Jenjang: ${data.level}
 - Fase: ${data.phase}
 - Kelas: ${data.grade}
+- Jumlah Siswa: ${data.studentCount || '28'} Siswa
 - Mata Pelajaran: ${data.subject}
 
 **DETAIL PEMBELAJARAN:**
@@ -69,7 +127,7 @@ ${specialInstructions.join('\n')}
 (JANGAN membuat Judul Utama / Heading 1 di awal dokumen. Langsung mulai baris pertama dengan A. Identitas Modul, karena aplikasi kami sudah menyediakan judul otomatis)
 
 **A. Identitas Modul**
-(Buat format tabel dengan kolom: Komponen | Keterangan. Isi: Modul (Mata Pelajaran), Penyusun/Tahun, Kelas/Fase Capaian, Elemen/Topik, Alokasi Waktu, Target Peserta Didik, Capaian Pembelajaran)
+(Buat format tabel dengan kolom: Komponen | Keterangan. Isi: Modul (Mata Pelajaran), Penyusun/Tahun, Kelas/Fase Capaian, Elemen/Topik, Alokasi Waktu, Target Peserta Didik (Sebutkan jumlah siswa yaitu ${data.studentCount || '28'} siswa dan karakteristik umumnya), Capaian Pembelajaran)
 
 **B. Dimensi Profil Lulusan**
 (Sebutkan dimensi profil pelajar Pancasila yang relevan, contoh: Penalaran kritis, kolaborasi, dll)
@@ -123,17 +181,32 @@ ${specialInstructions.join('\n')}
 - **Lembar Kerja Peserta Didik (LKPD)** (Format form kosong: Tujuan, Rumusan Masalah, Ayo Pelajari, Mencari Solusi, Kesimpulan)
 `;
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
-    
-    // We can use stream but for simplicity and reliability of this route, 
-    // let's return a regular JSON response. We can add streaming later if needed.
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.1-flash-lite' });
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
 
+    // 3. Decrement credit if successful and using system key
+    if (useSystemKey && token) {
+      const authSupabase = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: `Bearer ${token}` } }
+      });
+      // Best effort decrement. Even if it fails, the generation succeeded.
+      await authSupabase.rpc('decrement_my_credit');
+    }
+
     return NextResponse.json({ result: text });
   } catch (error: any) {
     console.error('Gemini API Error:', error);
+    
+    // Check if error is related to invalid API key provided by user
+    if (error.message?.includes('API key not valid')) {
+      return NextResponse.json(
+        { error: 'API Key Gemini Pribadi yang Anda masukkan tidak valid. Silakan periksa kembali di Pengaturan.' },
+        { status: 400 }
+      );
+    }
+
     return NextResponse.json(
       { error: error.message || 'Terjadi kesalahan saat menghubungi server AI.' },
       { status: 500 }
